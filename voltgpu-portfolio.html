@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoltGPU — Enterprise GPU Cloud Solutions</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #D4AF37;
+    --gold-light: #F0D060;
+    --gold-dark: #A08020;
+    --black: #060608;
+    --black2: #0D0D12;
+    --black3: #13131A;
+    --black4: #1A1A24;
+    --white: #F5F0E8;
+    --white-dim: rgba(245,240,232,0.6);
+    --white-faint: rgba(245,240,232,0.08);
+    --gold-glow: rgba(212,175,55,0.15);
+    --gold-glow2: rgba(212,175,55,0.04);
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom Cursor */
+  .cursor {
+    position: fixed;
+    width: 8px; height: 8px;
+    background: var(--gold);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transition: transform 0.1s;
+    mix-blend-mode: difference;
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 32px; height: 32px;
+    border: 1px solid var(--gold);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transition: all 0.15s ease;
+    opacity: 0.5;
+  }
+
+  /* Noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9997;
+    opacity: 0.4;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 24px 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(to bottom, rgba(6,6,8,0.95), transparent);
+    backdrop-filter: blur(10px);
+  }
+
+  .logo {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--white);
+  }
+  .logo span { color: var(--gold); }
+
+  .nav-links {
+    display: flex;
+    gap: 40px;
+    list-style: none;
+  }
+  .nav-links a {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--white-dim);
+    text-decoration: none;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: color 0.3s;
+  }
+  .nav-links a:hover { color: var(--gold); }
+
+  .nav-cta {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    padding: 10px 24px;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    text-decoration: none;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: all 0.3s;
+    background: transparent;
+  }
+  .nav-cta:hover {
+    background: var(--gold);
+    color: var(--black);
+  }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 120px 60px 60px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 60% at 70% 50%, rgba(212,175,55,0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 40% at 20% 80%, rgba(212,175,55,0.04) 0%, transparent 60%);
+  }
+
+  .grid-lines {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(212,175,55,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(212,175,55,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 0%, transparent 100%);
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 800px;
+  }
+
+  .hero-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.2s forwards;
+  }
+  .hero-badge::before {
+    content: '';
+    width: 40px; height: 1px;
+    background: var(--gold);
+  }
+
+  .hero-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(56px, 8vw, 96px);
+    font-weight: 700;
+    line-height: 0.95;
+    letter-spacing: -1px;
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.4s forwards;
+  }
+  .hero-title .gold { color: var(--gold); }
+  .hero-title .outline {
+    -webkit-text-stroke: 1px rgba(212,175,55,0.4);
+    color: transparent;
+  }
+
+  .hero-sub {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--white-dim);
+    max-width: 500px;
+    margin-bottom: 48px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.6s forwards;
+  }
+
+  .hero-buttons {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.8s forwards;
+  }
+
+  .btn-primary {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    padding: 16px 36px;
+    background: var(--gold);
+    color: var(--black);
+    text-decoration: none;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-primary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: white;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .btn-primary:hover::after { opacity: 0.1; }
+
+  .btn-secondary {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--white-dim);
+    text-decoration: none;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.3s;
+  }
+  .btn-secondary:hover { color: var(--gold); }
+  .btn-secondary::after { content: '→'; }
+
+  /* Floating stats */
+  .hero-stats {
+    position: absolute;
+    right: 60px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    opacity: 0;
+    animation: fadeLeft 0.8s ease 1s forwards;
+  }
+
+  .stat-card {
+    background: var(--black3);
+    border: 1px solid rgba(212,175,55,0.15);
+    padding: 24px 32px;
+    position: relative;
+    overflow: hidden;
+    min-width: 200px;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--gold);
+  }
+  .stat-num {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .stat-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--white-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* TICKER */
+  .ticker {
+    background: var(--gold);
+    padding: 12px 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .ticker-inner {
+    display: inline-flex;
+    animation: ticker 20s linear infinite;
+    gap: 0;
+  }
+  .ticker-item {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--black);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 0 40px;
+  }
+  .ticker-sep {
+    color: rgba(0,0,0,0.3);
+  }
+
+  /* SERVICES */
+  .section {
+    padding: 120px 60px;
+    position: relative;
+  }
+
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--gold);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-label::before {
+    content: '';
+    width: 24px; height: 1px;
+    background: var(--gold);
+  }
+
+  .section-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(36px, 5vw, 64px);
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 80px;
+  }
+
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+  }
+
+  .service-card {
+    background: var(--black3);
+    padding: 48px 40px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s;
+    border: 1px solid transparent;
+  }
+  .service-card:hover {
+    border-color: rgba(212,175,55,0.3);
+    background: var(--black4);
+    transform: translateY(-4px);
+  }
+  .service-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .service-card:hover::after { opacity: 1; }
+
+  .service-icon {
+    font-size: 32px;
+    margin-bottom: 24px;
+    display: block;
+  }
+  .service-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--gold);
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+    opacity: 0.6;
+  }
+  .service-name {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+  }
+  .service-desc {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--white-dim);
+  }
+
+  /* PRICING */
+  .pricing-section {
+    background: var(--black2);
+    padding: 120px 60px;
+  }
+
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-top: 80px;
+  }
+
+  .price-card {
+    background: var(--black3);
+    padding: 48px 40px;
+    position: relative;
+    transition: transform 0.3s;
+  }
+  .price-card:hover { transform: translateY(-8px); }
+  .price-card.featured {
+    background: var(--black4);
+    border: 1px solid var(--gold);
+  }
+  .price-card.featured::before {
+    content: 'MOST POPULAR';
+    position: absolute;
+    top: -1px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--gold);
+    color: var(--black);
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 6px 20px;
+  }
+
+  .price-tier {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--gold);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  .price-amount {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 64px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--white);
+    margin-bottom: 4px;
+  }
+  .price-amount sup {
+    font-size: 24px;
+    vertical-align: top;
+    margin-top: 12px;
+    color: var(--gold);
+  }
+  .price-period {
+    font-size: 13px;
+    color: var(--white-dim);
+    margin-bottom: 32px;
+  }
+  .price-divider {
+    height: 1px;
+    background: rgba(212,175,55,0.15);
+    margin-bottom: 32px;
+  }
+  .price-features {
+    list-style: none;
+    margin-bottom: 40px;
+  }
+  .price-features li {
+    font-size: 14px;
+    color: var(--white-dim);
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .price-features li::before {
+    content: '▸';
+    color: var(--gold);
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+
+  .price-btn {
+    display: block;
+    text-align: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 14px;
+    text-decoration: none;
+    transition: all 0.3s;
+  }
+  .price-btn-outline {
+    border: 1px solid rgba(212,175,55,0.4);
+    color: var(--gold);
+  }
+  .price-btn-outline:hover {
+    background: rgba(212,175,55,0.1);
+  }
+  .price-btn-solid {
+    background: var(--gold);
+    color: var(--black);
+    font-weight: 700;
+  }
+  .price-btn-solid:hover { background: var(--gold-light); }
+
+  /* WHY US */
+  .why-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+    margin-top: 80px;
+  }
+
+  .why-visual {
+    position: relative;
+    height: 500px;
+  }
+  .why-box {
+    position: absolute;
+    background: var(--black3);
+    border: 1px solid rgba(212,175,55,0.15);
+    padding: 32px;
+  }
+  .why-box-main {
+    width: 320px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-color: var(--gold);
+    text-align: center;
+    z-index: 2;
+  }
+  .why-box-1 { width: 180px; top: 20px; left: 20px; }
+  .why-box-2 { width: 160px; top: 20px; right: 20px; }
+  .why-box-3 { width: 180px; bottom: 20px; left: 20px; }
+  .why-box-4 { width: 160px; bottom: 20px; right: 20px; }
+
+  .why-box-main .big-num {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 72px;
+    font-weight: 700;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .why-box-main .big-label {
+    font-size: 13px;
+    color: var(--white-dim);
+    margin-top: 8px;
+  }
+  .why-box .mini-num {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--gold);
+  }
+  .why-box .mini-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--white-dim);
+    letter-spacing: 1px;
+    margin-top: 4px;
+  }
+
+  .connector-line {
+    position: absolute;
+    background: rgba(212,175,55,0.2);
+    z-index: 1;
+  }
+
+  .why-points {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+  .why-point {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+  .why-point-icon {
+    width: 48px; height: 48px;
+    background: var(--black3);
+    border: 1px solid rgba(212,175,55,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .why-point-content h4 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+  .why-point-content p {
+    font-size: 14px;
+    color: var(--white-dim);
+    line-height: 1.7;
+  }
+
+  /* TESTIMONIALS */
+  .testimonials-section {
+    background: var(--black2);
+    padding: 120px 60px;
+  }
+
+  .testimonials-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-top: 80px;
+  }
+
+  .testimonial-card {
+    background: var(--black3);
+    padding: 40px;
+    position: relative;
+  }
+  .testimonial-card::before {
+    content: '"';
+    position: absolute;
+    top: 20px; right: 30px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 80px;
+    color: var(--gold);
+    opacity: 0.2;
+    line-height: 1;
+  }
+
+  .testimonial-stars {
+    color: var(--gold);
+    font-size: 14px;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+  }
+  .testimonial-text {
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--white-dim);
+    margin-bottom: 32px;
+    font-style: italic;
+  }
+  .testimonial-author {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .author-avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--black);
+    flex-shrink: 0;
+  }
+  .author-name {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .author-role {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--gold);
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  /* PROCESS */
+  .process-steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-top: 80px;
+    position: relative;
+  }
+  .process-steps::before {
+    content: '';
+    position: absolute;
+    top: 32px; left: 10%;
+    width: 80%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), var(--gold), var(--gold), transparent);
+    opacity: 0.3;
+    z-index: 0;
+  }
+
+  .process-step {
+    padding: 0 32px;
+    position: relative;
+    z-index: 1;
+  }
+  .step-num {
+    width: 64px; height: 64px;
+    background: var(--black);
+    border: 1px solid var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 32px;
+  }
+  .step-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+  }
+  .step-desc {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--white-dim);
+  }
+
+  /* CTA SECTION */
+  .cta-section {
+    padding: 120px 60px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 80% at 50% 50%, rgba(212,175,55,0.05) 0%, transparent 70%);
+  }
+  .cta-section .grid-lines {
+    opacity: 0.5;
+  }
+
+  .cta-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(48px, 7vw, 88px);
+    font-weight: 700;
+    line-height: 0.95;
+    margin-bottom: 32px;
+    position: relative;
+    z-index: 1;
+  }
+  .cta-sub {
+    font-size: 16px;
+    color: var(--white-dim);
+    margin-bottom: 48px;
+    position: relative;
+    z-index: 1;
+  }
+  .cta-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* FOOTER */
+  footer {
+    background: var(--black2);
+    padding: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(212,175,55,0.1);
+  }
+
+  .footer-logo {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 3px;
+  }
+  .footer-logo span { color: var(--gold); }
+
+  .footer-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+  }
+  .footer-links a {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--white-dim);
+    text-decoration: none;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: color 0.3s;
+  }
+  .footer-links a:hover { color: var(--gold); }
+
+  .footer-copy {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: rgba(245,240,232,0.3);
+    letter-spacing: 1px;
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeLeft {
+    from { opacity: 0; transform: translate(30px, -50%); }
+    to { opacity: 1; transform: translate(0, -50%); }
+  }
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .float { animation: float 4s ease-in-out infinite; }
+
+  /* Scroll reveal */
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: all 0.8s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Live indicator */
+  .live-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: #4CAF50;
+    letter-spacing: 2px;
+  }
+  .live-dot::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: #4CAF50;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @media (max-width: 1024px) {
+    nav { padding: 20px 30px; }
+    .hero { padding: 100px 30px 60px; }
+    .hero-stats { display: none; }
+    .services-grid, .pricing-grid, .testimonials-grid { grid-template-columns: 1fr; }
+    .process-steps { grid-template-columns: 1fr 1fr; gap: 40px; }
+    .why-grid { grid-template-columns: 1fr; }
+    .why-visual { display: none; }
+    .section, .pricing-section, .testimonials-section { padding: 80px 30px; }
+    footer { flex-direction: column; gap: 24px; text-align: center; }
+    .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">VOLT<span>GPU</span></div>
+  <ul class="nav-links">
+    <li><a href="#services">Services</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#why">Why Us</a></li>
+    <li><a href="#process">Process</a></li>
+  </ul>
+  <a href="#contact" class="nav-cta">Get a Quote</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="grid-lines"></div>
+
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="live-dot">GPUs Available Now</span>
+    </div>
+    <h1 class="hero-title">
+      Enterprise<br>
+      <span class="gold">GPU Power.</span><br>
+      <span class="outline">Half the Cost.</span>
+    </h1>
+    <p class="hero-sub">
+      Dedicated H100 & A100 GPU compute for AI startups and ML teams — 
+      50% cheaper than AWS, no waitlist, live within 24 hours.
+    </p>
+    <div class="hero-buttons">
+      <a href="#contact" class="btn-primary">Start Today</a>
+      <a href="#pricing" class="btn-secondary">View Pricing</a>
+    </div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat-card float">
+      <div class="stat-num">50%</div>
+      <div class="stat-label">Cost Savings vs AWS</div>
+    </div>
+    <div class="stat-card float" style="animation-delay: 0.5s">
+      <div class="stat-num">24H</div>
+      <div class="stat-label">Setup Time</div>
+    </div>
+    <div class="stat-card float" style="animation-delay: 1s">
+      <div class="stat-num">99.9%</div>
+      <div class="stat-label">Uptime SLA</div>
+    </div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-inner">
+    <span class="ticker-item">NVIDIA H100 ✦</span>
+    <span class="ticker-item">NVIDIA A100 ✦</span>
+    <span class="ticker-item">LLM Training ✦</span>
+    <span class="ticker-item">AI Inference ✦</span>
+    <span class="ticker-item">Model Fine-Tuning ✦</span>
+    <span class="ticker-item">Monthly Contracts ✦</span>
+    <span class="ticker-item">50% Off AWS Pricing ✦</span>
+    <span class="ticker-item">24HR Setup ✦</span>
+    <span class="ticker-item">NVIDIA H100 ✦</span>
+    <span class="ticker-item">NVIDIA A100 ✦</span>
+    <span class="ticker-item">LLM Training ✦</span>
+    <span class="ticker-item">AI Inference ✦</span>
+    <span class="ticker-item">Model Fine-Tuning ✦</span>
+    <span class="ticker-item">Monthly Contracts ✦</span>
+    <span class="ticker-item">50% Off AWS Pricing ✦</span>
+    <span class="ticker-item">24HR Setup ✦</span>
+  </div>
+</div>
+
+<!-- SERVICES -->
+<section class="section" id="services">
+  <div class="section-label">What We Offer</div>
+  <h2 class="section-title reveal">GPU Solutions<br><span style="color:var(--gold)">Built for AI Teams</span></h2>
+
+  <div class="services-grid">
+    <div class="service-card reveal">
+      <span class="service-icon">⚡</span>
+      <div class="service-num">01</div>
+      <h3 class="service-name">H100 GPU Rental</h3>
+      <p class="service-desc">NVIDIA H100 80GB — the most powerful AI GPU available. Perfect for large language model training, complex AI workloads, and production-scale inference.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay: 0.1s">
+      <span class="service-icon">🔥</span>
+      <div class="service-num">02</div>
+      <h3 class="service-name">A100 GPU Rental</h3>
+      <p class="service-desc">NVIDIA A100 80GB — industry standard for AI research and model fine-tuning. Ideal for startups scaling from prototype to production at lower cost.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay: 0.2s">
+      <span class="service-icon">🌐</span>
+      <div class="service-num">03</div>
+      <h3 class="service-name">Multi-GPU Clusters</h3>
+      <p class="service-desc">Scale from 1 to 50+ GPUs instantly. Need a cluster for distributed training? We provision multi-GPU setups with high-speed interconnects within 24 hours.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay: 0.3s">
+      <span class="service-icon">📅</span>
+      <div class="service-num">04</div>
+      <h3 class="service-name">Monthly Contracts</h3>
+      <p class="service-desc">Flexible monthly billing with no long-term lock-ins. Reserve capacity for your team, scale up or down anytime, and pay only for what you use.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay: 0.4s">
+      <span class="service-icon">🔒</span>
+      <div class="service-num">05</div>
+      <h3 class="service-name">Dedicated Access</h3>
+      <p class="service-desc">Full SSH access to dedicated GPU nodes. Not shared instances — your compute is yours alone. Maximum performance, zero interference from other workloads.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay: 0.5s">
+      <span class="service-icon">🛠️</span>
+      <div class="service-num">06</div>
+      <h3 class="service-name">24/7 Direct Support</h3>
+      <p class="service-desc">Direct support from a real person — not a helpdesk ticket system. Fast response, hands-on help with setup, and proactive monitoring of your instances.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing-section" id="pricing">
+  <div class="section-label">Transparent Pricing</div>
+  <h2 class="section-title reveal">No Hidden Fees.<br><span style="color:var(--gold)">No Surprises.</span></h2>
+
+  <div class="pricing-grid">
+    <div class="price-card reveal">
+      <div class="price-tier">Starter</div>
+      <div class="price-amount"><sup>$</sup>1.5</div>
+      <div class="price-period">per GPU / hour — A100 40GB</div>
+      <div class="price-divider"></div>
+      <ul class="price-features">
+        <li>1–4 GPU slots</li>
+        <li>Full SSH access</li>
+        <li>PyTorch & TensorFlow ready</li>
+        <li>100GB SSD storage</li>
+        <li>Email support</li>
+        <li>Monthly billing</li>
+      </ul>
+      <a href="#contact" class="price-btn price-btn-outline">Get Started</a>
+    </div>
+
+    <div class="price-card featured reveal" style="transition-delay: 0.1s">
+      <div class="price-tier">Professional</div>
+      <div class="price-amount"><sup>$</sup>2.5</div>
+      <div class="price-period">per GPU / hour — A100 80GB</div>
+      <div class="price-divider"></div>
+      <ul class="price-features">
+        <li>5–20 GPU slots</li>
+        <li>Full SSH + API access</li>
+        <li>All ML frameworks</li>
+        <li>500GB NVMe storage</li>
+        <li>Priority support 24/7</li>
+        <li>InfiniBand networking</li>
+      </ul>
+      <a href="#contact" class="price-btn price-btn-solid">Get Started</a>
+    </div>
+
+    <div class="price-card reveal" style="transition-delay: 0.2s">
+      <div class="price-tier">Enterprise</div>
+      <div class="price-amount"><sup>$</sup>3.5</div>
+      <div class="price-period">per GPU / hour — H100 80GB</div>
+      <div class="price-divider"></div>
+      <ul class="price-features">
+        <li>20–50+ GPU clusters</li>
+        <li>Bare-metal dedicated nodes</li>
+        <li>Custom ML environments</li>
+        <li>2TB+ storage options</li>
+        <li>Dedicated account manager</li>
+        <li>SLA guarantee 99.9%</li>
+      </ul>
+      <a href="#contact" class="price-btn price-btn-outline">Contact Us</a>
+    </div>
+  </div>
+
+  <p style="text-align:center; margin-top: 40px; font-family: 'Space Mono', monospace; font-size: 11px; color: var(--white-dim); letter-spacing: 1px;">
+    Compare: AWS charges $7–13/hr for same hardware. You save 50–75% with VoltGPU.
+  </p>
+</section>
+
+<!-- WHY US -->
+<section class="section" id="why">
+  <div class="section-label">Why VoltGPU</div>
+  <h2 class="section-title reveal">Built Different.<br><span style="color:var(--gold)">Priced Better.</span></h2>
+
+  <div class="why-grid">
+    <div class="why-visual reveal">
+      <div class="why-box why-box-1">
+        <div class="mini-num">50%</div>
+        <div class="mini-label">Cost Savings</div>
+      </div>
+      <div class="why-box why-box-2">
+        <div class="mini-num">24H</div>
+        <div class="mini-label">Go Live</div>
+      </div>
+      <div class="why-box why-box-main float">
+        <div class="big-num">99.9%</div>
+        <div class="big-label">Uptime Guaranteed</div>
+      </div>
+      <div class="why-box why-box-3">
+        <div class="mini-num">H100</div>
+        <div class="mini-label">Top GPU</div>
+      </div>
+      <div class="why-box why-box-4">
+        <div class="mini-num">0</div>
+        <div class="mini-label">Waitlist</div>
+      </div>
+    </div>
+
+    <ul class="why-points">
+      <li class="why-point reveal">
+        <div class="why-point-icon">💰</div>
+        <div class="why-point-content">
+          <h4>50% Cheaper Than Big Cloud</h4>
+          <p>AWS and GCP charge up to $13/hr for H100. We provide the same hardware starting at $2.5/hr — with no complex billing or surprise egress fees.</p>
+        </div>
+      </li>
+      <li class="why-point reveal" style="transition-delay: 0.1s">
+        <div class="why-point-icon">⚡</div>
+        <div class="why-point-content">
+          <h4>No Waitlist — Live in 24 Hours</h4>
+          <p>AWS waitlists can take weeks. With VoltGPU, tell us your requirements today and your GPUs are live within 24 hours — guaranteed.</p>
+        </div>
+      </li>
+      <li class="why-point reveal" style="transition-delay: 0.2s">
+        <div class="why-point-icon">🤝</div>
+        <div class="why-point-content">
+          <h4>Real Human Support</h4>
+          <p>No helpdesk tickets. No bots. You message me directly and get a response within hours — not days. Setup help included at no extra cost.</p>
+        </div>
+      </li>
+      <li class="why-point reveal" style="transition-delay: 0.3s">
+        <div class="why-point-icon">🔓</div>
+        <div class="why-point-content">
+          <h4>No Long-Term Lock-In</h4>
+          <p>Month-to-month contracts. Scale up or down anytime. No 1-year commitments, no cancellation penalties. Full flexibility for your growing team.</p>
+        </div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- PROCESS -->
+<section class="pricing-section" id="process">
+  <div class="section-label">How It Works</div>
+  <h2 class="section-title reveal">Up and Running<br><span style="color:var(--gold)">in 4 Simple Steps</span></h2>
+
+  <div class="process-steps">
+    <div class="process-step reveal">
+      <div class="step-num">01</div>
+      <h3 class="step-title">Tell Us Your Needs</h3>
+      <p class="step-desc">Message us with your GPU requirements — how many GPUs, what type, for how long, and what workload. We'll respond within 2 hours.</p>
+    </div>
+    <div class="process-step reveal" style="transition-delay: 0.1s">
+      <div class="step-num">02</div>
+      <h3 class="step-title">Get Custom Quote</h3>
+      <p class="step-desc">We send you a transparent quote with exact pricing. No hidden fees, no surprise charges. What we quote is what you pay.</p>
+    </div>
+    <div class="process-step reveal" style="transition-delay: 0.2s">
+      <div class="step-num">03</div>
+      <h3 class="step-title">Pay & Confirm</h3>
+      <p class="step-desc">Pay via your preferred method. We accept all major payment options. 50% advance to start, rest monthly.</p>
+    </div>
+    <div class="process-step reveal" style="transition-delay: 0.3s">
+      <div class="step-num">04</div>
+      <h3 class="step-title">Start Training</h3>
+      <p class="step-desc">Your dedicated GPU is live within 24 hours. SSH credentials delivered. Start running your AI workloads immediately.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials-section" id="testimonials">
+  <div class="section-label">Client Feedback</div>
+  <h2 class="section-title reveal">Trusted by<br><span style="color:var(--gold)">AI Teams Worldwide</span></h2>
+
+  <div class="testimonials-grid">
+    <div class="testimonial-card reveal">
+      <div class="testimonial-stars">★★★★★</div>
+      <p class="testimonial-text">"We were burning $40K/month on AWS for H100s. VoltGPU cut that to under $18K with the same performance. Setup took less than a day. Unbelievable value."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">AR</div>
+        <div>
+          <div class="author-name">Alex Rodriguez</div>
+          <div class="author-role">CTO — AI Startup, San Francisco</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="testimonial-card reveal" style="transition-delay: 0.1s">
+      <div class="testimonial-stars">★★★★★</div>
+      <p class="testimonial-text">"Finally an alternative to the big clouds that actually works. Got 8x A100s live within 24 hours. The direct support is what makes VoltGPU stand out — real person, fast replies."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">SK</div>
+        <div>
+          <div class="author-name">Sarah Kim</div>
+          <div class="author-role">ML Engineer — Research Lab, NYC</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="testimonial-card reveal" style="transition-delay: 0.2s">
+      <div class="testimonial-stars">★★★★★</div>
+      <p class="testimonial-text">"We were on AWS waitlist for 3 weeks for H100 access. Messaged VoltGPU on a Monday, had GPUs running by Tuesday morning. This is how cloud should work."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">MP</div>
+        <div>
+          <div class="author-name">Marcus Patel</div>
+          <div class="author-role">Founder — Generative AI Company, London</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section" id="contact">
+  <div class="grid-lines"></div>
+  <div class="section-label" style="justify-content: center; margin-bottom: 24px">Ready to Start?</div>
+  <h2 class="cta-title reveal">
+    Cut Your GPU Costs<br>
+    <span style="color:var(--gold)">in Half. Today.</span>
+  </h2>
+  <p class="cta-sub reveal">Tell us your requirements — we'll send a quote within 2 hours.</p>
+  <div class="cta-buttons reveal">
+    <a href="https://upwork.com" class="btn-primary">Message on Upwork</a>
+    <a href="mailto:hello@voltgpu.com" class="btn-secondary">Send Email</a>
+  </div>
+
+  <div style="margin-top: 60px; display: flex; justify-content: center; gap: 60px; flex-wrap: wrap;" class="reveal">
+    <div style="text-align: center;">
+      <div style="font-family: 'Rajdhani', sans-serif; font-size: 48px; font-weight: 700; color: var(--gold);">50%</div>
+      <div style="font-family: 'Space Mono', monospace; font-size: 10px; color: var(--white-dim); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px;">Average Cost Savings</div>
+    </div>
+    <div style="text-align: center;">
+      <div style="font-family: 'Rajdhani', sans-serif; font-size: 48px; font-weight: 700; color: var(--gold);">24H</div>
+      <div style="font-family: 'Space Mono', monospace; font-size: 10px; color: var(--white-dim); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px;">Setup Guarantee</div>
+    </div>
+    <div style="text-align: center;">
+      <div style="font-family: 'Rajdhani', sans-serif; font-size: 48px; font-weight: 700; color: var(--gold);">99.9%</div>
+      <div style="font-family: 'Space Mono', monospace; font-size: 10px; color: var(--white-dim); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px;">Uptime SLA</div>
+    </div>
+    <div style="text-align: center;">
+      <div style="font-family: 'Rajdhani', sans-serif; font-size: 48px; font-weight: 700; color: var(--gold);">0</div>
+      <div style="font-family: 'Space Mono', monospace; font-size: 10px; color: var(--white-dim); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px;">Waitlist</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">VOLT<span>GPU</span></div>
+  <ul class="footer-links">
+    <li><a href="#services">Services</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#why">Why Us</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <div class="footer-copy">© 2026 VoltGPU. All rights reserved.</div>
+</footer>
+
+<script>
+  // Custom Cursor
+  const cursor = document.getElementById('cursor');
+  const cursorRing = document.getElementById('cursorRing');
+  let mouseX = 0, mouseY = 0;
+  let ringX = 0, ringY = 0;
+
+  document.addEventListener('mousemove', e => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    cursor.style.left = mouseX - 4 + 'px';
+    cursor.style.top = mouseY - 4 + 'px';
+  });
+
+  function animateRing() {
+    ringX += (mouseX - ringX) * 0.12;
+    ringY += (mouseY - ringY) * 0.12;
+    cursorRing.style.left = ringX - 16 + 'px';
+    cursorRing.style.top = ringY - 16 + 'px';
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+
+  document.querySelectorAll('a, button').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      cursor.style.transform = 'scale(2)';
+      cursorRing.style.transform = 'scale(1.5)';
+      cursorRing.style.opacity = '1';
+    });
+    el.addEventListener('mouseleave', () => {
+      cursor.style.transform = 'scale(1)';
+      cursorRing.style.transform = 'scale(1)';
+      cursorRing.style.opacity = '0.5';
+    });
+  });
+
+  // Scroll Reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  reveals.forEach(el => observer.observe(el));
+
+  // Counter Animation
+  function animateCounter(el, target, suffix = '') {
+    let current = 0;
+    const step = target / 60;
+    const timer = setInterval(() => {
+      current += step;
+      if (current >= target) {
+        current = target;
+        clearInterval(timer);
+      }
+      el.textContent = Math.floor(current) + suffix;
+    }, 16);
+  }
+
+  // Nav scroll effect
+  window.addEventListener('scroll', () => {
+    const nav = document.querySelector('nav');
+    if (window.scrollY > 50) {
+      nav.style.background = 'rgba(6,6,8,0.98)';
+    } else {
+      nav.style.background = 'linear-gradient(to bottom, rgba(6,6,8,0.95), transparent)';
+    }
+  });
+</script>
+</body>
+</html>
